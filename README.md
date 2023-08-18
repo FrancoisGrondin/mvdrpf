@@ -28,7 +28,7 @@ sed -n '700001,900000p' <speech_shuffled_file> > <speech_eval_file>
 sed -n '900001,1000000p' <speech_shuffled_file> > <speech_test_file>
 ```
 
-For each list of speech files, the spectrogram features can be generated. For instance, to generate a set of 1000 samples from index 1 to 1000 for training, the following script can be used, where `<features_train_directory>` stands for the destination directory:
+For each list of speech files, the target and interference MVDR beamformed time-domain signals, along with the ideal time-domain signals (when no contamination by competing sources). For instance, to generate a set of 1000 samples from index 1 to 1000 for training, the following script can be used, where `<features_train_directory>` stands for the destination directory:
 
 ```
 python3 features.py --list <speech_train_file> --index_start 1 --index_stop 1000 --output <features_train_directory>
