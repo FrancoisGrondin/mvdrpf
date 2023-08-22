@@ -2,6 +2,9 @@ import torch
 import progressbar
 import matplotlib.pyplot as plt
 import os
+import metrics
+import kissdsp.io as io
+import numpy as np
 
 class Brain:
 
@@ -45,11 +48,12 @@ class Brain:
             total_loss = 0.0
 
             # Load all batches
-            for X, M in progressbar.progressbar(dataloader):
+            for X, M, Y in progressbar.progressbar(dataloader):
 
                 # Transfer to device
                 X = X.to(self.device)
                 M = M.to(self.device)
+                Y = Y.to(self.device)
 
                 # Zero gradients
                 self.optimizer.zero_grad()
@@ -58,7 +62,7 @@ class Brain:
                 M_hat = self.net(X)
 
                 # Compute loss
-                loss = self.criterion(M_hat*X[:,:,:,-1], M*X[:,:,:,-1])
+                loss = self.criterion(M_hat * torch.exp(X[:, :, :, 0]), M * torch.exp(X[:, :, :, 0]))
 
                 # Backprop
                 loss.backward()
@@ -89,11 +93,12 @@ class Brain:
         total_loss = 0.0
 
         # Load all batches
-        for X, M in progressbar.progressbar(dataloader):
+        for X, M, Y in progressbar.progressbar(dataloader):
 
             # Transfer to device
             X = X.to(self.device)
             M = M.to(self.device)
+            Y = Y.to(self.device)
 
             # Predict
             M_hat = self.net(X)
@@ -127,11 +132,12 @@ class Brain:
         counter = 0
 
         # Load all samples (batches of 1 sample)
-        for X, M in progressbar.progressbar(dataloader):
+        for X, M, Y in progressbar.progressbar(dataloader):
 
             # Transfer to device
             X = X.to(self.device)
             M = M.to(self.device)
+            Y = Y.to(self.device)
 
             # Predict
             M_hat = self.net(X)
@@ -139,14 +145,27 @@ class Brain:
             # To CPU
             X = X.detach().cpu()
             M = M.detach().cpu()
+            Y = Y.detach().cpu()
             M_hat = M_hat.detach().cpu()
 
             # To Numpy
             X = X.numpy()
             M = M.numpy()
+            Y = Y.numpy()
             M_hat = M_hat.numpy()
 
+            # Back to time-domain
+            y_target, y_ideal, y_est, y_ref = metrics.timedomain(Y, M, M_hat)
+            ys = np.concatenate((y_target, y_ideal, y_est, y_ref), axis=0)
+
+            # File name
+            path = "%s%08u.wav" % (output_directory, counter)
+
+            # Save
+            io.write(ys, path)
+
             # Create figure
+            plt.clf()
             plt.subplot(4, 1, 1)
             plt.imshow(X[0, :, :, 0].T, aspect='auto', origin='lower')
             plt.subplot(4, 1, 2)

@@ -5,7 +5,7 @@ import torch
 import matplotlib.pyplot as plt
 
 from dataset import SpexIrm
-from model import BGru
+from model import BGru, UGru
 from brain import Brain
 
 parser = argparse.ArgumentParser()
@@ -18,14 +18,21 @@ parser.add_argument('--num_epochs', default=1, type=int, help='Number of epochs.
 parser.add_argument('--output_dir', default=None, type=str, help='Output directory to generate test results.')
 parser.add_argument('--checkpoint_load', default=None, type=str, help='File with checkpoint to load from.')
 parser.add_argument('--checkpoint_save', default=None, type=str, help='File with checkpoint to save to.')
+parser.add_argument('--model', default='bgru_1-128', type=str, choices=['bgru_1-128', 'ugru_1-128', 'ugru_1-512', 'ugru_2-512'])
 args = parser.parse_args()
 
 # Datasets
 dset = SpexIrm(path=args.dataset)
 
 # Model
-net = BGru(hidden_size=128, 
-           num_layers=1)
+if args.model == 'bgru_1-128':
+    net = BGru(hidden_size=128, num_layers=1)
+if args.model == 'ugru_1-128':
+    net = UGru(hidden_size=128, num_layers=1)
+if args.model == 'ugru_1-512':
+    net = UGru(hidden_size=512, num_layers=1)
+if args.model == 'ugru_2-512':
+    net = UGru(hidden_size=512, num_layers=2)
 
 # Brain
 brn = Brain(net=net, 

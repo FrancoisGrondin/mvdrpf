@@ -50,4 +50,8 @@ class SpexIrm(Dataset):
         # Compute ideal ratio mask: T x F
         M = np.clip((np.abs(X_ref) ** 2) / (np.abs(X_target) ** 2 + self.epsilon), a_min=0.0, a_max=1.0)
 
-        return X, M
+        # Return STFT for time-domain reconstruction
+        Y = np.concatenate((np.expand_dims(X_target, axis=2),
+                            np.expand_dims(X_ref, axis=2)), axis=2)
+
+        return X, M, Y
