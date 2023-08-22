@@ -116,6 +116,7 @@ def main():
         # Save to file
         output_path = os.path.join(args.output, '%010d.wav' % index)
         io.write(ys, output_path)
+        print(output_path)
 
 
 def concatenate_waves(files, wave_duration, silence_duration, sample_rate, number_trials):
@@ -125,20 +126,26 @@ def concatenate_waves(files, wave_duration, silence_duration, sample_rate, numbe
 
     s = np.zeros((1,wave_samples), dtype=np.float32)
     wave_samples_count = 0
-
+    
     for trial in range(0, number_trials):
 
         while True:
-
-            segment, _ = lr.load(path=rnd.choice(files).rstrip(),
+        
+            this_path = rnd.choice(files).rstrip()
+            segment, _ = lr.load(path=this_path,
                                  sr=sample_rate,
                                  dtype=np.float32)
 
             segment = np.expand_dims(segment, axis=0)
             wave_samples_total = wave_samples_count + segment.shape[1]
 
-            if wave_samples_total > wave_samples:
-                break
+            if wave_samples_count > 0:
+                if wave_samples_total > wave_samples:
+                    break
+            else:
+                if wave_samples_total > wave_samples:
+                    segment = np.resize(segment,(1,wave_samples))
+                    wave_samples_total = wave_samples
 
             segment_0dB = mx.pwr(segment, levels=np.asarray([0.0]))
 
