@@ -9,7 +9,7 @@ from model import BGru, UGru
 from brain import Brain
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--action', default='train', type=str, choices=['train','eval','test'], help='Action to perform.')
+parser.add_argument('--action', default='train', type=str, choices=['train','eval','test','traineval'], help='Action to perform.')
 parser.add_argument('--dataset', default=None, type=str, help='Text file with list of all wave files.')
 parser.add_argument('--batch_size', default=1, type=int, help='Batch size for training or validation.')
 parser.add_argument('--shuffle', default=True, type=bool, help='Shuffle training samples.')
@@ -74,3 +74,12 @@ if args.action == 'test':
 
     # Test
     brn.test(directory=args.output_dir)
+
+# Train-eval
+# This is where I would add a call to the brain 
+# class to a method that will alternate between training
+# and validation, and check how the loss changes.
+# We can probably add the option to use tensorboard here
+# to monitor the training, or simply write to a file
+# as it goes the loss function after each epoch. I would
+# save the model to a checkpoint after each epoch in this case.
