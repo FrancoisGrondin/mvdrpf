@@ -18,11 +18,11 @@ parser.add_argument('--num_epochs', default=1, type=int, help='Number of epochs.
 parser.add_argument('--output_dir', default=None, type=str, help='Output directory to generate test results.')
 parser.add_argument('--checkpoint_load', default=None, type=str, help='File with checkpoint to load from.')
 parser.add_argument('--checkpoint_save', default=None, type=str, help='File with checkpoint to save to.')
-parser.add_argument('--model', default='bgru_1-128', type=str, choices=['bgru_1-128', 'ugru_1-128', 'ugru_1-512', 'ugru_2-512'])
+parser.add_argument('--model', default='bgru_1-128', type=str, choices=['bgru_1-128', 'ugru_1-128', 'ugru_1-512', 'ugru_2-512', 'ugru_2-1024'])
 args = parser.parse_args()
 
 # Datasets
-dset = SpexIrm(path=args.dataset)
+dset = SpexIrm(path=args.dataset, beta=0.25)
 
 # Model
 if args.model == 'bgru_1-128':
@@ -33,6 +33,8 @@ if args.model == 'ugru_1-512':
     net = UGru(hidden_size=512, num_layers=1)
 if args.model == 'ugru_2-512':
     net = UGru(hidden_size=512, num_layers=2)
+if args.model == 'ugru_2-1024':
+    net = UGru(hidden_size=1024, num_layers=2)
 
 # Brain
 brn = Brain(net=net, 

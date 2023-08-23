@@ -9,10 +9,10 @@ class BGru(torch.nn.Module):
         self.bn = torch.nn.BatchNorm2d(num_features=2)
 
         self.rnn = torch.nn.GRU(input_size=2*(int(frame_size/2+1)), 
-        					    hidden_size=hidden_size, 
-        						num_layers=num_layers, 
-        						batch_first=True,
-        						bidirectional=True)
+                                hidden_size=hidden_size, 
+                                num_layers=num_layers, 
+                                batch_first=True,
+                                bidirectional=True)
 
         self.fc = torch.nn.Conv2d(in_channels=2*hidden_size,
                                   out_channels=int(frame_size/2+1),

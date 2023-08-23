@@ -5,7 +5,7 @@ import os
 
 class SpexIrm(Dataset):
     
-    def __init__(self, path, frame_size=512, hop_size=128, epsilon=1e-20):
+    def __init__(self, path, frame_size=512, hop_size=128, epsilon=1e-20, beta=1.0):
     
         # Load list of all files
         with open(path, 'r') as file:
@@ -15,6 +15,7 @@ class SpexIrm(Dataset):
         self.frame_size = frame_size
         self.hop_size = hop_size
         self.epsilon = epsilon
+        self.beta = beta
 
     def __len__(self):        
 
@@ -44,14 +45,17 @@ class SpexIrm(Dataset):
         X_ref = np.swapaxes(X_ref, axis1=0, axis2=1)
 
         # Set in format: T x F x 2
-        X = np.log(np.abs(np.concatenate((np.expand_dims(X_target, axis=2),
-                                          np.expand_dims(X_interf, axis=2)), axis=2)) + self.epsilon)
+        X_cat = np.concatenate((np.expand_dims(X_target, axis=2), np.expand_dims(X_interf, axis=2)), axis=2)
+        X = np.log(np.abs(X_cat) + self.epsilon)
 
         # Compute ideal ratio mask: T x F
-        M = np.clip((np.abs(X_ref) ** 2) / (np.abs(X_target) ** 2 + self.epsilon), a_min=0.0, a_max=1.0)
+        M = np.clip(np.abs(X_ref) / (np.abs(X_target) + self.epsilon), a_min=0.0, a_max=1.0)
+
+        # Return weighting time-frequency factor
+        W = np.abs(X_target) ** self.beta
 
         # Return STFT for time-domain reconstruction
         Y = np.concatenate((np.expand_dims(X_target, axis=2),
                             np.expand_dims(X_ref, axis=2)), axis=2)
 
-        return X, M, Y
+        return X, M, W, Y

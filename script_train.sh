@@ -3,7 +3,7 @@ dataset="/media/fgrondin/Scratch/tmp/features/features_train.txt"
 num_workers=16
 batch_size=16
 num_epochs=5
-model="bgru_1-128"
+model="ugru_1-512"
 checkpoints_dir="/media/fgrondin/Scratch/tmp/checkpoints/${model}/"
 
 for epoch in {001..100}

@@ -48,11 +48,12 @@ class Brain:
             total_loss = 0.0
 
             # Load all batches
-            for X, M, Y in progressbar.progressbar(dataloader):
+            for X, M, W, Y in progressbar.progressbar(dataloader):
 
                 # Transfer to device
                 X = X.to(self.device)
                 M = M.to(self.device)
+                W = W.to(self.device)
                 Y = Y.to(self.device)
 
                 # Zero gradients
@@ -62,7 +63,8 @@ class Brain:
                 M_hat = self.net(X)
 
                 # Compute loss
-                loss = self.criterion(M_hat * torch.exp(X[:, :, :, 0]), M * torch.exp(X[:, :, :, 0]))
+                X_target = X[:, :, :, 0]
+                loss = self.criterion(M_hat*W, M*W)
 
                 # Backprop
                 loss.backward()
@@ -93,18 +95,19 @@ class Brain:
         total_loss = 0.0
 
         # Load all batches
-        for X, M, Y in progressbar.progressbar(dataloader):
+        for X, M, W, Y in progressbar.progressbar(dataloader):
 
             # Transfer to device
             X = X.to(self.device)
             M = M.to(self.device)
+            W = W.to(self.device)        
             Y = Y.to(self.device)
 
             # Predict
             M_hat = self.net(X)
 
             # Compute loss
-            loss = self.criterion(M_hat*X[:,:,:,-1], M*X[:,:,:,-1])
+            loss = self.criterion(M_hat*W, M*W)
 
             # Add to total
             total_loss += loss.item()
@@ -132,11 +135,12 @@ class Brain:
         counter = 0
 
         # Load all samples (batches of 1 sample)
-        for X, M, Y in progressbar.progressbar(dataloader):
+        for X, M, W, Y in progressbar.progressbar(dataloader):
 
             # Transfer to device
             X = X.to(self.device)
             M = M.to(self.device)
+            W = W.to(self.device)                    
             Y = Y.to(self.device)
 
             # Predict
@@ -145,12 +149,14 @@ class Brain:
             # To CPU
             X = X.detach().cpu()
             M = M.detach().cpu()
+            W = W.detach().cpu()
             Y = Y.detach().cpu()
             M_hat = M_hat.detach().cpu()
 
             # To Numpy
             X = X.numpy()
             M = M.numpy()
+            W = W.numpy()
             Y = Y.numpy()
             M_hat = M_hat.numpy()
 
