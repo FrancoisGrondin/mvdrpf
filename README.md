@@ -4,6 +4,7 @@
 
 The following packages are required:
 
+```
 torch
 matplotlib
 numpy
@@ -14,6 +15,7 @@ metrics
 pypesq
 pystoi
 mir_eval
+```
 
 ## Generating features
 
