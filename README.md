@@ -1,5 +1,20 @@
 # Getting started
 
+## Package requirements
+
+The following packages are required:
+
+torch
+matplotlib
+numpy
+kissdsp
+progressbar
+progressbar2
+metrics
+pypesq
+pystoi
+mir_eval
+
 ## Generating features
 
 Using the DNS Challenge data, run the following command, where `<speech_directory>` contains the wav files with speech and `<speech_sorted_file>` will hold the list of speech files:
@@ -85,3 +100,65 @@ The model can be used to generate masks and save the results to png figures on t
 ```
 python3 ml.py --dataset <features_test_file> --action test --checkpoint_load <checkpoint_bin_file> --output_dir <output_png_directory>
 ```
+
+## Using the included scripts
+
+We assume that the base directory in which all of the files are stored (training data, feature text files, checkpoints, results, etc.) has the following structure:
+
+```
+$(base_dir)/
+  features/
+    features_test.txt
+    features_train.txt
+    features_valid.txt
+  data/
+    test/
+      *.wav
+    train/
+      *.wav
+    valid/
+      *.wav
+  checkpoints/
+    model1/
+      *.bin
+    model2/
+      *.bin
+    ...
+  results/
+    model1/
+      *.wav
+    model2/
+      *.wav
+    ...
+  speech_test.txt
+  speech_train.txt
+  speech_valid.txt
+```
+
+And we also assume that the DNS Challenge data has been cloned, such that the clean folder is in `$(dns_clean)`.
+
+To create the text files that bare the paths to the clean speech files (`speech_test.txt`, `speech_train.txt`, and `speech_valid.txt`), run:
+```
+bash script_data.sh $(dns_clean) $(base_dir)
+```
+
+To create the features files, run:
+```
+bash script_features.sh $(base_dir)
+```
+
+You are welcome to modify the following variables in `script_features.sh`: `trainnum` is the number of data points for training, `validnum` is the number of data points for evaluation/validation, and `testnum` is the number of data points for testing.
+
+To train a model from scratch, with an evaluation at every given number of epochs, run:
+```
+bash script_traineval.sh $(base_dir)
+```
+
+You are welcome to modify the following variables in `script_traineval.sh`: `num_workers` is the number of threads to use while training and evaluating, `batch_size` is the isze of data points per batch, `num_epochs` is the total number of epochs to run (an epoch being running through all of the data points in `features_train.txt`), `num_epochs_eval` is the number of epochs to run after which an evaluation is carried out and a checkpoint is saved, and `model` is the type of model to train (valid choices are: 'bgru_1-128', 'ugru_1-128', 'ugru_1-512', 'ugru_2-512', and 'ugru_2-1024').
+
+To train a model from a given checkpoint, with an evaluation at every given number of epochs, run:
+```
+bash script_traineval.sh $(path_to_checkpoint)
+```
+
+The path to the base directory is assumed from the checkpoint path, assuming the base directory structure is respected.

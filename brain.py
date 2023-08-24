@@ -4,11 +4,16 @@ import matplotlib.pyplot as plt
 import os
 import metrics
 import kissdsp.io as io
+import kissdsp.filterbank as fb
 import numpy as np
+
+import mir_eval
+from pypesq import pesq
+from pystoi import stoi
 
 class Brain:
 
-    def __init__(self, net, dset):
+    def __init__(self, net, dset, dset_eval=None):
 
         torch.backends.cudnn.enabled = True
         use_cuda = torch.cuda.is_available()
@@ -16,6 +21,7 @@ class Brain:
         self.device = torch.device("cuda:0" if use_cuda else "cpu")
         self.net = net.to(self.device)
         self.dset = dset
+        self.dset_eval = dset_eval
         self.criterion = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.net.parameters())
 
@@ -80,19 +86,29 @@ class Brain:
 
         return average_loss
 
-    def eval(self, batch_size=1, shuffle=True, num_workers=0):
+    def eval(self, batch_size=1, shuffle=True, num_workers=0, sample_rate=16000):
 
         # Create dataloader
-        dataloader = torch.utils.data.DataLoader(dataset=self.dset,
-                                                 batch_size=batch_size,
-                                                 shuffle=shuffle,
-                                                 num_workers=num_workers)
+        if self.dset_eval == None:
+            dataloader = torch.utils.data.DataLoader(dataset=self.dset,
+                                                     batch_size=batch_size,
+                                                     shuffle=shuffle,
+                                                     num_workers=num_workers)
+        else:
+            dataloader = torch.utils.data.DataLoader(dataset=self.dset_eval,
+                                                     batch_size=batch_size,
+                                                     shuffle=shuffle,
+                                                     num_workers=num_workers)
 
         # Eval mode
         self.net.eval()
 
-        # Track total loss
+        # Track total loss, pesq and stoi
         total_loss = 0.0
+        total_pesq = 0.0
+        total_stoi = 0.0
+        total_sdr = 0.0
+        total_metrics = 0
 
         # Load all batches
         for X, M, W, Y in progressbar.progressbar(dataloader):
@@ -100,7 +116,7 @@ class Brain:
             # Transfer to device
             X = X.to(self.device)
             M = M.to(self.device)
-            W = W.to(self.device)        
+            W = W.to(self.device)
             Y = Y.to(self.device)
 
             # Predict
@@ -109,13 +125,32 @@ class Brain:
             # Compute loss
             loss = self.criterion(M_hat*W, M*W)
 
-            # Add to total
+            # Add to total loss
             total_loss += loss.item()
+
+            # Compute evaluation metrics (PESQ, STOI, SDR)
+            M = M.detach().cpu().numpy()
+            Y = Y.detach().cpu().numpy()
+            M_hat = M_hat.detach().cpu().numpy()
+            y_target_batch, y_ideal_batch, y_est_batch, y_ref_batch = metrics.timedomain(Y, M, M_hat)
+            for batch_i in range(0,y_ref_batch.shape[0]):
+                y_ref = y_ref_batch[batch_i,:]
+                y_est = y_est_batch[batch_i,:]
+                total_pesq += pesq(ref=y_ref, deg=y_est, fs=sample_rate)
+                total_stoi += stoi(y_ref, y_est, fs_sig=sample_rate, extended=False)
+                (sdr, sir, sar, perm) = mir_eval.separation.bss_eval_sources(y_ref, y_est)
+                total_sdr += sdr[0]
+                total_metrics += 1
+
+        # Compute average metrics
+        average_pesq = total_pesq / total_metrics
+        average_stoi = total_stoi / total_metrics
+        average_sdr = total_sdr / total_metrics
 
         # Compute average loss
         average_loss = total_loss / len(dataloader)
 
-        return average_loss
+        return [average_loss, average_pesq, average_stoi, average_sdr]
 
     def test(self, directory):
 
