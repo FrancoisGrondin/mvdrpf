@@ -8,12 +8,14 @@ import kissdsp.filterbank as fb
 import numpy as np
 
 import mir_eval
-from pypesq import pesq
-from pystoi import stoi
+#from pypesq import pesq
+#from pystoi import stoi
+from torchmetrics.audio import ShortTimeObjectiveIntelligibility
+from torchmetrics.audio.pesq import PerceptualEvaluationSpeechQuality
 
 class Brain:
 
-    def __init__(self, net, dset, dset_eval=None):
+    def __init__(self, net, dset, dset_eval=None, sample_rate=16000):
 
         torch.backends.cudnn.enabled = True
         use_cuda = torch.cuda.is_available()
@@ -24,6 +26,8 @@ class Brain:
         self.dset_eval = dset_eval
         self.criterion = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.net.parameters())
+        self.stoi = ShortTimeObjectiveIntelligibility(sample_rate, False)
+        self.pesq = PerceptualEvaluationSpeechQuality(sample_rate, 'wb')
 
     def save_checkpoint(self, path):
 
@@ -129,16 +133,24 @@ class Brain:
             total_loss += loss.item()
 
             # Compute evaluation metrics (PESQ, STOI, SDR)
-            M = M.detach().cpu().numpy()
-            Y = Y.detach().cpu().numpy()
-            M_hat = M_hat.detach().cpu().numpy()
-            y_target_batch, y_ideal_batch, y_est_batch, y_ref_batch = metrics.timedomain(Y, M, M_hat)
+            #M = M.detach().cpu().numpy()
+            #Y = Y.detach().cpu().numpy()
+            #M_hat = M_hat.detach().cpu().numpy()
+            #y_target_batch, y_ideal_batch, y_est_batch, y_ref_batch = metrics.timedomain(Y, M, M_hat)
+            
+            y_target_batch, y_ideal_batch, y_est_batch, y_ref_batch = metrics.timedomain_torch(Y, M, M_hat)
             for batch_i in range(0,y_ref_batch.shape[0]):
                 y_ref = y_ref_batch[batch_i,:]
                 y_est = y_est_batch[batch_i,:]
-                total_pesq += pesq(ref=y_ref, deg=y_est, fs=sample_rate)
-                total_stoi += stoi(y_ref, y_est, fs_sig=sample_rate, extended=False)
-                (sdr, sir, sar, perm) = mir_eval.separation.bss_eval_sources(y_ref, y_est)
+                
+                #total_pesq += pesq(ref=y_ref, deg=y_est, fs=sample_rate)
+                #total_stoi += stoi(y_ref, y_est, fs_sig=sample_rate, extended=False)
+                #(sdr, sir, sar, perm) = mir_eval.separation.bss_eval_sources(y_ref, y_est)
+                
+                total_pesq += self.pesq(y_est,y_ref)
+                total_stoi += self.stoi(y_est,y_ref)
+                (sdr, sir, sar, perm) = mir_eval.separation.bss_eval_sources(y_ref.detach().cpu().numpy(), y_est.detach().cpu().numpy())
+                
                 total_sdr += sdr[0]
                 total_metrics += 1
 

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# make sure to add export PYTHONPATH=${PYTHONPATH}:${HOME}/kissdsp if using local installation
+
 if [ -z "$1" ]; then
     echo "Need base folder (where the speech text files are) or checkpoint file."
     exit 1
@@ -27,10 +29,10 @@ else
     exit 1
 fi
 
-num_workers=16
+num_workers=4 #16
 batch_size=16
-num_epochs=100
-num_epochs_eval=5
+num_epochs=9 #100
+num_epochs_eval=3 #5
 model="ugru_1-512"
 
 dataset_train="$basedir/features/features_train.txt"

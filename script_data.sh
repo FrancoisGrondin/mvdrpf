@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# make sure to add export PYTHONPATH=${PYTHONPATH}:${HOME}/kissdsp if using local installation
-
 if [ -z "$1" ]; then
         echo "Need clean speech dataset folder."
         exit 1

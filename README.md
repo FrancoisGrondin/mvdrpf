@@ -6,16 +6,18 @@ The following packages are required:
 
 ```
 torch
+pesq
+torchmetrics[audio]
 matplotlib
 numpy
 kissdsp
 progressbar
 progressbar2
-metrics
-pypesq
-pystoi
 mir_eval
 ```
+
+[comment]: <> (pypesq)
+[comment]: <> (pystoi)
 
 ## Generating features
 
