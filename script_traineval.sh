@@ -29,10 +29,10 @@ else
     exit 1
 fi
 
-num_workers=4 #16
+num_workers=16 #for testing: 4
 batch_size=16
-num_epochs=9 #100
-num_epochs_eval=3 #5
+num_epochs=100 #for testing: 9
+num_epochs_eval=5 #for testing: 3
 model="ugru_1-512"
 
 dataset_train="$basedir/features/features_train.txt"
