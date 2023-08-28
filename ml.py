@@ -9,6 +9,15 @@ from dataset import SpexIrm
 from model import BGru, UGru
 from brain import Brain
 
+def get_metrics_path(checkpoint_save_dir, model):
+    if checkpoint_save_dir is None:
+        metrics_csv_path = model+".csv"
+    else:
+        results_dir = os.path.dirname(os.path.dirname(os.path.dirname(checkpoint_save_dir)))
+        metrics_csv_path = results_dir+"/results/"+model+".csv"
+    print("Storing metrics in: "+metrics_csv_path)
+    return metrics_csv_path
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--action', default='train', type=str, choices=['train','eval','test','traineval'], help='Action to perform.')
 parser.add_argument('--dataset', default=None, type=str, help='Text file with list of all wave files. To be used with all actions except traineval.')
@@ -58,13 +67,38 @@ else:
 if args.checkpoint_load is not None:
     brn.load_checkpoint(path=args.checkpoint_load)
     if args.action == 'traineval':
+        metrics_csv_path = get_metrics_path(args.checkpoint_save_dir, args.model)
+
         checkpoint_num = int(os.path.basename(args.checkpoint_load).split(".bin")[0])
         print("Starting at the end of checkpoint "+str(checkpoint_num)+".")
+
+        # remove all metrics in CSV file after checkpoint
+        metrics_csv_file = open(metrics_csv_path,"r")
+        metrics_csv_lines = metrics_csv_file.readlines()
+        metrics_csv_file.close()
+        
+        for i in range(1,len(metrics_csv_lines)): #starting from index 1 to skip the CSV header
+            this_checkpoint = int(metrics_csv_lines[i].split(",")[0])
+            if this_checkpoint >= checkpoint_num:
+                break
+        i += 1
+        
+        if i < len(metrics_csv_lines):
+            del metrics_csv_lines[i:]
+            metrics_csv_file = open(metrics_csv_path,"w")
+            metrics_csv_file.writelines(metrics_csv_lines)
+            metrics_csv_file.close()
 else:
     if args.action == 'traineval':
+        metrics_csv_path = get_metrics_path(args.checkpoint_save_dir, args.model)
+
         checkpoint_num = 0
         print("Starting from scratch.")
 
+        # create new CSV file with corresponding header
+        metrics_csv_file = open(metrics_csv_path,"w")
+        metrics_csv_file.write("checkpoint,epoch_start,epoch_end,loss_train,loss_eval,PESQ,STOI,SDR\n")
+        metrics_csv_file.close()
 
 # Training
 if args.action == 'train':
@@ -114,28 +148,34 @@ if args.action == 'traineval':
     
     checkpoint_total = int(args.num_epochs/args.num_epochs_eval)
     
-    for epoch in range(checkpoint_num, checkpoint_total):
+    for chckpoint in range(checkpoint_num, checkpoint_total):
         # Train
         print("<<<<<<")
-        print("--- Checkpoint "+str(epoch+1)+": training from epoch "+str(epoch*args.num_epochs_eval+1)+ " to " +str(epoch*args.num_epochs_eval+args.num_epochs_eval)+"...")
-        loss = brn.train(batch_size=args.batch_size,
+        epoch_start = chckpoint*args.num_epochs_eval+1
+        epoch_end = chckpoint*args.num_epochs_eval+args.num_epochs_eval
+        print("--- Checkpoint "+str(chckpoint+1)+": training from epoch "+str(epoch_start)+ " to " +str(epoch_end)+"...")
+        loss_train = brn.train(batch_size=args.batch_size,
                          shuffle=args.shuffle,
                          num_workers=args.num_workers,
                          num_epochs=args.num_epochs_eval)
 
-        print("--- Checkpoint "+str(epoch+1)+": train loss = %f" % loss)
+        print("--- Checkpoint "+str(chckpoint+1)+": train loss = %f" % loss_train)
 
         # Save to checkpoint if specified
         if args.checkpoint_save_dir is not None:
-            this_checkpoint_save = args.checkpoint_save_dir+f'{epoch+1:03}'+".bin"
-            print("--- Checkpoint "+str(epoch+1)+": saving checkpoint to "+this_checkpoint_save)
+            this_checkpoint_save = args.checkpoint_save_dir+f'{chckpoint+1:03}'+".bin"
+            print("--- Checkpoint "+str(chckpoint+1)+": saving checkpoint to "+this_checkpoint_save)
             brn.save_checkpoint(path=this_checkpoint_save)
 
         # Eval
-        print("--- Checkpoint "+str(epoch+1)+": evaluating checkpoint...")
-        [loss, pesq, stoi, sdr] = brn.eval(batch_size=args.batch_size,
+        print("--- Checkpoint "+str(chckpoint+1)+": evaluating checkpoint...")
+        [loss_eval, pesq, stoi, sdr] = brn.eval(batch_size=args.batch_size,
                         shuffle=args.shuffle,
                         num_workers=args.num_workers)
 
-        print("--- Checkpoint "+str(epoch+1)+": eval loss = %f, PESQ = %f, STOI = %f, SDR = %f" % (loss, pesq, stoi, sdr))
+        print("--- Checkpoint "+str(chckpoint+1)+": eval loss = %f, PESQ = %f, STOI = %f, SDR = %f" % (loss_eval, pesq, stoi, sdr))
+        metrics_csv_file = open(metrics_csv_path,"a")
+        metrics_csv_file.write(str(chckpoint+1)+","+str(epoch_start)+","+str(epoch_end)+","+str(loss_train)+","+str(loss_eval)+","+str(pesq.item())+","+str(stoi.item())+","+str(sdr)+"\n")
+        metrics_csv_file.close()
+        
         print(">>>>>>")
