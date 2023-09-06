@@ -5,7 +5,7 @@ import os
 
 class SpexIrm(Dataset):
     
-    def __init__(self, path, frame_size=512, hop_size=128, epsilon=1e-20, beta=1.0):
+    def __init__(self, path, frame_size=512, hop_size=128, epsilon=1e-20, beta=1.0, channel_count=2):
     
         # Load list of all files
         with open(path, 'r') as file:
@@ -16,6 +16,7 @@ class SpexIrm(Dataset):
         self.hop_size = hop_size
         self.epsilon = epsilon
         self.beta = beta
+        self.channel_count = channel_count
 
     def __len__(self):        
 
@@ -45,7 +46,10 @@ class SpexIrm(Dataset):
         X_ref = np.swapaxes(X_ref, axis1=0, axis2=1)
 
         # Set in format: T x F x 2
-        X_cat = np.concatenate((np.expand_dims(X_target, axis=2), np.expand_dims(X_interf, axis=2)), axis=2)
+        if self.channel_count == 1:
+            X_cat = np.concatenate((np.expand_dims(X_target, axis=2), np.expand_dims(X_target, axis=2)), axis=2)
+        if self.channel_count == 2:
+            X_cat = np.concatenate((np.expand_dims(X_target, axis=2), np.expand_dims(X_interf, axis=2)), axis=2)
         X = np.log(np.abs(X_cat) + self.epsilon)
 
         # Compute ideal ratio mask: T x F

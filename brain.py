@@ -73,7 +73,6 @@ class Brain:
                 M_hat = self.net(X)
 
                 # Compute loss
-                X_target = X[:, :, :, 0]
                 loss = self.criterion(M_hat*W, M*W)
 
                 # Backprop
@@ -90,7 +89,150 @@ class Brain:
 
         return average_loss
 
-    def eval(self, batch_size=1, shuffle=True, num_workers=0, sample_rate=16000):
+    def eval(self, batch_size=16, shuffle=False, num_workers=0, sample_rate=16000):
+
+        # Create dataloader
+        dataloader = torch.utils.data.DataLoader(dataset=self.dset,
+                                                 batch_size=batch_size,
+                                                 shuffle=shuffle,
+                                                 num_workers=num_workers)
+
+        # Eval mode
+        self.net.eval()
+
+        # Track total loss
+        total_loss = 0.0           
+
+        # Load all batches
+        for X, M, W, Y in progressbar.progressbar(dataloader):
+
+            # Transfer to device
+            X = X.to(self.device)
+            M = M.to(self.device)
+            W = W.to(self.device)
+            Y = Y.to(self.device)
+
+            # Predict
+            M_hat = self.net(X)
+
+            # Compute loss
+            loss = self.criterion(M_hat*W, M*W)
+
+            # Add to total loss
+            total_loss += loss.item()
+
+        # Compute average loss
+        average_loss = total_loss / len(dataloader)
+
+        return average_loss
+
+    def measure(self, shuffle=True, sample_rate=16000):
+
+        # Create dataloader
+        dataloader = torch.utils.data.DataLoader(dataset=self.dset,
+                                                 batch_size=1,
+                                                 shuffle=shuffle,
+                                                 num_workers=0)
+
+        # Eval mode
+        self.net.eval()
+
+        # Track total pesq, stoi and sdr
+        total_pesq_no = 0.0
+        total_stoi_no = 0.0
+        total_sdr_no = 0.0
+        total_pesq_pf = 0.0
+        total_stoi_pf = 0.0
+        total_sdr_pf = 0.0
+
+        # Load all batches
+        for X, M, W, Y in progressbar.progressbar(dataloader):
+
+            # Transfer to device
+            X = X.to(self.device)
+            M = M.to(self.device)
+            W = W.to(self.device)
+            Y = Y.to(self.device)
+
+            # Predict
+            M_hat = self.net(X)
+
+            # Back to time domain
+            y_target_batch, y_ideal_batch, y_est_batch, y_ref_batch = metrics.timedomain_torch(Y, M, M_hat)
+            y_tgt = y_target_batch[0, :]
+            y_est = y_est_batch[0, :]
+            y_ref = y_ref_batch[0, :]
+
+            # Compute metrics
+            total_pesq_no += self.pesq(y_tgt,y_ref).numpy()
+            total_stoi_no += self.stoi(y_tgt,y_ref).numpy()
+            (sdr, sir, sar, perm) = mir_eval.separation.bss_eval_sources(y_ref.detach().cpu().numpy(), y_tgt.detach().cpu().numpy())
+            total_sdr_no += sdr[0]
+
+            total_pesq_pf += self.pesq(y_est,y_ref).numpy()
+            total_stoi_pf += self.stoi(y_est,y_ref).numpy()
+            (sdr, sir, sar, perm) = mir_eval.separation.bss_eval_sources(y_ref.detach().cpu().numpy(), y_est.detach().cpu().numpy())
+            total_sdr_pf += sdr[0]
+
+        # Compute average metrics
+        average_pesq_pf = total_pesq_pf / len(dataloader)
+        average_stoi_pf = total_stoi_pf / len(dataloader)
+        average_sdr_pf = total_sdr_pf / len(dataloader)
+        average_pesq_no = total_pesq_no / len(dataloader)
+        average_stoi_no = total_stoi_no / len(dataloader)
+        average_sdr_no = total_sdr_no / len(dataloader)        
+
+        return [average_pesq_pf, average_pesq_no, average_stoi_pf, average_stoi_no, average_sdr_pf, average_sdr_no]
+
+    def improvement(self, shuffle=True, sample_rate=16000):
+
+        # Create dataloader
+        dataloader = torch.utils.data.DataLoader(dataset=self.dset,
+                                                 batch_size=1,
+                                                 shuffle=shuffle,
+                                                 num_workers=0)
+
+        # Eval mode
+        self.net.eval()
+
+        pesqs = np.zeros((len(dataloader),2))
+        stois = np.zeros((len(dataloader),2))
+        sdrs = np.zeros((len(dataloader),2))
+        index = 0
+
+        # Load all batches
+        for X, M, W, Y in progressbar.progressbar(dataloader):
+
+            # Transfer to device
+            X = X.to(self.device)
+            M = M.to(self.device)
+            W = W.to(self.device)
+            Y = Y.to(self.device)
+
+            # Predict
+            M_hat = self.net(X)
+
+            # Back to time domain
+            y_target_batch, y_ideal_batch, y_est_batch, y_ref_batch = metrics.timedomain_torch(Y, M, M_hat)
+            y_tgt = y_target_batch[0, :]
+            y_est = y_est_batch[0, :]
+            y_ref = y_ref_batch[0, :]
+
+            pesqs[index, 0] = self.pesq(y_tgt, y_ref).numpy()
+            pesqs[index, 1] = self.pesq(y_est, y_ref).numpy()
+            stois[index, 0] = self.stoi(y_tgt, y_ref).numpy()
+            stois[index, 1] = self.stoi(y_est, y_ref).numpy()
+
+            (sdr, sir, sar, perm) = mir_eval.separation.bss_eval_sources(y_ref.detach().cpu().numpy(), y_tgt.detach().cpu().numpy())
+            sdrs[index, 0] = sdr[0]
+            (sdr, sir, sar, perm) = mir_eval.separation.bss_eval_sources(y_ref.detach().cpu().numpy(), y_est.detach().cpu().numpy())
+            sdrs[index, 1] = sdr[0]
+
+            index += 1
+
+        return [pesqs, stois, sdrs]
+
+    def eval2(self, batch_size=1, shuffle=True, num_workers=0, sample_rate=16000):
 
         # Create dataloader
         if self.dset_eval == None:

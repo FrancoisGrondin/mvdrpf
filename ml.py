@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 
 from dataset import SpexIrm
-from model import BGru, UGru
+from model import URnn
 from brain import Brain
 
 def get_metrics_path(checkpoint_save_dir, model):
@@ -19,7 +19,7 @@ def get_metrics_path(checkpoint_save_dir, model):
     return metrics_csv_path
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--action', default='train', type=str, choices=['train','eval','test','traineval'], help='Action to perform.')
+parser.add_argument('--action', default='train', type=str, choices=['train','eval','test','traineval','measure','improvement'], help='Action to perform.')
 parser.add_argument('--dataset', default=None, type=str, help='Text file with list of all wave files. To be used with all actions except traineval.')
 parser.add_argument('--dataset_train', default=None, type=str, help='Text file with list of all training wave files. To be used only with action traineval.')
 parser.add_argument('--dataset_eval', default=None, type=str, help='Text file with list of all evaluation (validation) wave files. To be used only with action traineval.')
@@ -32,27 +32,57 @@ parser.add_argument('--output_dir', default=None, type=str, help='Output directo
 parser.add_argument('--checkpoint_load', default=None, type=str, help='File with checkpoint to load from.')
 parser.add_argument('--checkpoint_save', default=None, type=str, help='File with checkpoint to save to.')
 parser.add_argument('--checkpoint_save_dir', default=None, type=str, help='Directory to save checkpoints to. To be used only with action traineval.')
-parser.add_argument('--model', default='bgru_1-128', type=str, choices=['bgru_1-128', 'ugru_1-128', 'ugru_1-512', 'ugru_2-512', 'ugru_2-1024'])
+parser.add_argument('--model', default='ugru_1-128_1ch', type=str, choices=['ugru_1-128_1ch', 'ugru_1-128_2ch', 'ugru_1-256_1ch', 'ugru_1-256_2ch', 'ugru_1-512_1ch', 'ugru_1-512_2ch', \
+                                                                            'ugru_2-128_1ch', 'ugru_2-128_2ch', 'ugru_2-256_1ch', 'ugru_2-256_2ch', 'ugru_2-512_1ch', 'ugru_2-512_2ch', \
+                                                                            'ulstm_1-128_1ch', 'ulstm_1-128_2ch', 'ulstm_1-256_1ch', 'ulstm_1-256_2ch', 'ulstm_1-512_1ch', 'ulstm_1-512_2ch', \
+                                                                            'ulstm_2-128_1ch', 'ulstm_2-128_2ch', 'ulstm_2-256_1ch', 'ulstm_2-256_2ch', 'ulstm_2-512_1ch', 'ulstm_2-512_2ch' ])
 args = parser.parse_args()
+
+if args.model == 'ugru_1-128_1ch' or args.model == 'ugru_1-256_1ch' or args.model == 'ugru_1-512_1ch' or \
+   args.model == 'ugru_2-128_1ch' or args.model == 'ugru_2-256_1ch' or args.model == 'ugru_2-512_1ch' or \
+   args.model == 'ulstm_1-128_1ch' or args.model == 'ulstm_1-256_1ch' or args.model == 'ulstm_1-512_1ch' or \
+   args.model == 'ulstm_2-128_1ch' or args.model == 'ulstm_2-256_1ch' or args.model == 'ulstm_2-512_1ch':
+   channel_count = 1
+
+if args.model == 'ugru_1-128_2ch' or args.model == 'ugru_1-256_2ch' or args.model == 'ugru_1-512_2ch' or \
+   args.model == 'ugru_2-128_2ch' or args.model == 'ugru_2-256_2ch' or args.model == 'ugru_2-512_2ch' or \
+   args.model == 'ulstm_1-128_2ch' or args.model == 'ulstm_1-256_2ch' or args.model == 'ulstm_1-512_2ch' or \
+   args.model == 'ulstm_2-128_2ch' or args.model == 'ulstm_2-256_2ch' or args.model == 'ulstm_2-512_2ch':
+   channel_count = 2
 
 # Datasets
 if args.action == 'traineval':
-    dset = SpexIrm(path=args.dataset_train, beta=0.25)
-    dset_eval = SpexIrm(path=args.dataset_eval, beta=0.25)
+    dset = SpexIrm(path=args.dataset_train, beta=0.25, channel_count=channel_count)
+    dset_eval = SpexIrm(path=args.dataset_eval, beta=0.25, channel_count=channel_count)
 else:
-    dset = SpexIrm(path=args.dataset, beta=0.25)
+    dset = SpexIrm(path=args.dataset, beta=0.25, channel_count=channel_count)
 
 # Model
-if args.model == 'bgru_1-128':
-    net = BGru(hidden_size=128, num_layers=1)
-if args.model == 'ugru_1-128':
-    net = UGru(hidden_size=128, num_layers=1)
-if args.model == 'ugru_1-512':
-    net = UGru(hidden_size=512, num_layers=1)
-if args.model == 'ugru_2-512':
-    net = UGru(hidden_size=512, num_layers=2)
-if args.model == 'ugru_2-1024':
-    net = UGru(hidden_size=1024, num_layers=2)
+if args.model == 'ugru_1-128_1ch' or args.model == 'ugru_1-128_2ch':
+    net = URnn(hidden_size=128, num_layers=1, type='gru')
+if args.model == 'ugru_1-256_1ch' or args.model == 'ugru_1-256_2ch':
+    net = URnn(hidden_size=256, num_layers=1, type='gru')
+if args.model == 'ugru_1-512_1ch' or args.model == 'ugru_1-512_2ch':
+    net = URnn(hidden_size=512, num_layers=1, type='gru')
+if args.model == 'ugru_2-128_1ch' or args.model == 'ugru_2-128_2ch':
+    net = URnn(hidden_size=128, num_layers=2, type='gru')
+if args.model == 'ugru_2-256_1ch' or args.model == 'ugru_2-256_2ch':
+    net = URnn(hidden_size=256, num_layers=2, type='gru')
+if args.model == 'ugru_2-512_1ch' or args.model == 'ugru_2-512_2ch':
+    net = URnn(hidden_size=512, num_layers=2, type='gru')
+if args.model == 'ulstm_1-128_1ch' or args.model == 'ulstm_1-128_2ch':
+    net = URnn(hidden_size=128, num_layers=1, type='lstm')
+if args.model == 'ulstm_1-256_1ch' or args.model == 'ulstm_1-256_2ch':
+    net = URnn(hidden_size=256, num_layers=1, type='lstm')
+if args.model == 'ulstm_1-512_1ch' or args.model == 'ulstm_1-512_2ch':
+    net = URnn(hidden_size=512, num_layers=1, type='lstm')
+if args.model == 'ulstm_2-128_1ch' or args.model == 'ulstm_2-128_2ch':
+    net = URnn(hidden_size=128, num_layers=2, type='lstm')
+if args.model == 'ulstm_2-256_1ch' or args.model == 'ulstm_2-256_2ch':
+    net = URnn(hidden_size=256, num_layers=2, type='lstm')
+if args.model == 'ulstm_2-512_1ch' or args.model == 'ulstm_2-512_2ch':
+    net = URnn(hidden_size=512, num_layers=2, type='lstm')
+
 
 # Brain
 if args.action == 'traineval':
@@ -119,14 +149,29 @@ if args.action == 'train':
 if args.action == 'eval':
 
     # Eval
-    [loss, pesq, stoi, sdr] = brn.eval(batch_size=args.batch_size,
+    loss = brn.eval(batch_size=args.batch_size,
                     shuffle=args.shuffle,
                     num_workers=args.num_workers)
 
     print("Eval loss = %f" % loss)
-    print("     PESQ = %f" % pesq)
-    print("     STOI = %f" % stoi)
-    print("     SDR  = %f" % sdr)
+
+# Measure
+if args.action == 'measure':
+
+    # Measure performances
+    [pesq_pf, pesq_no, stoi_pf, stoi_no, sdr_pf, sdr_no] = brn.measure(shuffle=args.shuffle)
+
+    print("PESQ = (%f,%f), STOI = (%f,%f), SDR = (%f,%f)" % (pesq_no, pesq_pf, stoi_no, stoi_pf, sdr_no, sdr_pf))
+
+# Improvement
+if args.action == 'improvement':
+
+    # Measure improvements for each sample
+    [pesqs, stois, sdrs] = brn.improvement(shuffle=args.shuffle)
+
+    for index in range(0, pesqs.shape[0]):
+        print("PESQ_start = %f, PESQ_end = %f, STOI_start = %f, STOI_end = %f, SDR_start = %f, SDR_end = %f" % \
+              (pesqs[index,0], pesqs[index,1], stois[index,0], stois[index,1], sdrs[index,0], sdrs[index,1]))
 
 # Test
 if args.action == 'test':

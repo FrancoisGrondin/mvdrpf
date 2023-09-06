@@ -46,7 +46,7 @@ def main():
                                         sample_rate=args.sample_rate,
                                         number_trials=args.number_trials))
 
-        # Generate room
+        # Generate room            
         room = configure_room(size=rnd.choice(['small', 'medium', 'large']), 
                               micarray=rnd.choice(['respeaker_usb', 'respeaker_core', 'matrix_creator', 'matrix_voice', 'minidsp_uma']), 
                               number_sources=args.number_sources, 
@@ -116,7 +116,7 @@ def main():
         # Save to file
         output_path = os.path.join(args.output, '%010d.wav' % index)
         io.write(ys, output_path)
-        print(output_path)
+        print("[%u/%u]: %s" % (index-args.index_start+1, args.index_stop-args.index_start+1, output_path))
 
 
 def concatenate_waves(files, wave_duration, silence_duration, sample_rate, number_trials):
@@ -222,9 +222,17 @@ def configure_room(size, micarray, number_sources, margin=0.5, rotate=True):
 
     # Position sources
 
-    srcs = np.concatenate([np.random.uniform(low=margin, high=box[0]-margin, size=(number_sources, 1)),
-                           np.random.uniform(low=margin, high=box[1]-margin, size=(number_sources, 1)),
-                           np.random.uniform(low=margin, high=box[2]-margin, size=(number_sources, 1))], axis=1)
+    while True:
+
+        srcs = np.concatenate([np.random.uniform(low=margin, high=box[0]-margin, size=(number_sources, 1)),
+                               np.random.uniform(low=margin, high=box[1]-margin, size=(number_sources, 1)),
+                               np.random.uniform(low=margin, high=box[2]-margin, size=(number_sources, 1))], axis=1)
+
+        # Make sure distance is less or equal to 3 meters
+        max_dist = np.amax(np.sqrt(np.sum((srcs - np.expand_dims(origin, axis=0)) ** 2, axis=1)))
+
+        if max_dist < 3.0:
+            break
 
     # Speed of sound
     c = np.random.uniform(low=330.0, high=355.0)
