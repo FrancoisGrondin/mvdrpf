@@ -166,3 +166,36 @@ bash script_traineval.sh $(path_to_checkpoint)
 ```
 
 The path to the base directory is assumed from the checkpoint path, assuming the base directory structure is respected.
+
+## Using SteerNet to estimate the covariance matrices
+
+To use SteerNet, the whole process is very similar to that explained until now, the only difference is that the features are based on the SteerNet estimations instead of on the ideal estimations used by `script_features.sh`.
+
+First, it is required to clone the SteerNet github repository locally in `$(steernet_dir)`:
+```
+cd <parent directory to $(steernet_dir)>
+git clone https://github.com/FrancoisGrondin/steernet.git
+```
+
+The code that creates the SteerNet-based features imports the SteerNet python library automatically, depending of where it is located. To facilitate this, once the SteerNet github repository is cloned, create a symbolic link named `steernet` to point to the `python` folder inside it:
+```
+cd $(steernet_dir)
+ln -s python ./steernet
+```
+
+Then, carry out the data creation process, using the included scripts, right up to the point using `script_features.sh`. To create the SteerNet-based features, instead use `script_features_steernet.sh`:
+```
+bash script_features_steernet.sh $(base_dir) $(steernet_dir)
+```
+
+Similarly, you are also welcome to modify the `trainnum`, `validnum`, and `testnum` variables in `script_features_steernet.sh`.
+
+The rest of the process follows the same as explained earlier:
+```
+bash script_traineval.sh $(base_dir)
+```
+
+or 
+```
+bash script_traineval.sh $(path_to_checkpoint)
+
