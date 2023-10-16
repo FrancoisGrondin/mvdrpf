@@ -198,4 +198,5 @@ bash script_traineval.sh $(base_dir)
 or 
 ```
 bash script_traineval.sh $(path_to_checkpoint)
+```
 
