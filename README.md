@@ -14,6 +14,7 @@ kissdsp
 progressbar
 progressbar2
 mir_eval
+librosa
 ```
 
 [comment]: <> (pypesq)
@@ -107,7 +108,7 @@ python3 ml.py --dataset <features_test_file> --action test --checkpoint_load <ch
 
 ## Using the included scripts
 
-We assume that the base directory in which all of the files are stored (training data, feature text files, checkpoints, results, etc.) has the following structure:
+The base directory in which all of the files are stored (training data, feature text files, checkpoints, results, etc.) should have the following structure:
 
 ```
 $(base_dir)/
@@ -139,7 +140,12 @@ $(base_dir)/
   speech_valid.txt
 ```
 
-And we also assume that the DNS Challenge data has been cloned, such that the clean folder is in `$(dns_clean)`.
+To create this structure, run:
+```
+bash script_basedir.sh $(base_dir)
+```
+
+We assume that the DNS Challenge data has been cloned, such that the clean folder is in `$(dns_clean)`.
 
 To create the text files that bare the paths to the clean speech files (`speech_test.txt`, `speech_train.txt`, and `speech_valid.txt`), run:
 ```
