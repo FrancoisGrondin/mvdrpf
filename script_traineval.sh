@@ -33,11 +33,16 @@ num_workers=16 #for testing: 4
 batch_size=16
 num_epochs=100 #for testing: 9
 num_epochs_eval=5 #for testing: 3
-model="ugru_1-512"
+model="ugru_1-512_2ch"
 
 dataset_train="$basedir/features/features_train.txt"
 dataset_eval="$basedir/features/features_valid.txt"
 checkpoints_dir="$basedir/checkpoints/${model}/"
+
+if [ ! -d "$checkpoints_dir" ]; then
+  mkdir -p "$checkpoints_dir"
+fi
+
 
 if [ -z "$checkpoint" ]; then
     python3 ml.py --dataset_train $dataset_train \
