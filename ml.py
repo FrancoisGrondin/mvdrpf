@@ -214,7 +214,7 @@ if args.action == 'traineval':
 
         # Eval
         print("--- Checkpoint "+str(chckpoint+1)+": evaluating checkpoint...")
-        [loss_eval, pesq, stoi, sdr] = brn.eval(batch_size=args.batch_size,
+        [loss_eval, pesq, stoi, sdr] = brn.eval2(batch_size=args.batch_size,
                         shuffle=args.shuffle,
                         num_workers=args.num_workers)
 
