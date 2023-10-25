@@ -10,6 +10,16 @@ fi
 if [[ -d "$1" ]]; then
     basedir=$1
     checkpoint=""
+    if [ -z "$2" ]; then
+        echo "Need model name. Possible model names:"
+        echo "     ugru_1-128_1ch, ugru_1-128_2ch, ugru_1-256_1ch, ugru_1-256_2ch, ugru_1-512_1ch, ugru_1-512_2ch,"
+        echo "     ugru_2-128_1ch, ugru_2-128_2ch, ugru_2-256_1ch, ugru_2-256_2ch, ugru_2-512_1ch, ugru_2-512_2ch," 
+        echo "     ulstm_1-128_1ch, ulstm_1-128_2ch, ulstm_1-256_1ch, ulstm_1-256_2ch, ulstm_1-512_1ch, ulstm_1-512_2ch,"
+        echo "     ulstm_2-128_1ch, ulstm_2-128_2ch, ulstm_2-256_1ch, ulstm_2-256_2ch, ulstm_2-512_1ch, ulstm_2-512_2ch"
+        exit 1
+    else
+        model="$2"
+    fi
 elif [[ -f "$1" ]]; then
     checkpoint=$1
     filename=$(basename -- "$checkpoint")
@@ -20,6 +30,7 @@ elif [[ -f "$1" ]]; then
         exit 1
     fi
     basedir=$(dirname $1) #model folder
+    model=$(basename $basedir) #getting model name from path
     basedir=$(dirname $basedir) #checkpoints folder
     basedir=$(dirname $basedir) #base folder
     
@@ -29,11 +40,12 @@ else
     exit 1
 fi
 
+echo "Training model: $model"
+
 num_workers=16 #for testing: 4
 batch_size=16
 num_epochs=100 #for testing: 9
 num_epochs_eval=5 #for testing: 3
-model="ugru_1-512_2ch"
 
 dataset_train="$basedir/features/features_train.txt"
 dataset_eval="$basedir/features/features_valid.txt"

@@ -161,10 +161,18 @@ You are welcome to modify the following variables in `script_features.sh`: `trai
 
 To train a model from scratch, with an evaluation at every given number of epochs, run:
 ```
-bash script_traineval.sh $(base_dir)
+bash script_traineval.sh $(base_dir) $(modelname)
 ```
 
-You are welcome to modify the following variables in `script_traineval.sh`: `num_workers` is the number of threads to use while training and evaluating, `batch_size` is the isze of data points per batch, `num_epochs` is the total number of epochs to run (an epoch being running through all of the data points in `features_train.txt`), `num_epochs_eval` is the number of epochs to run after which an evaluation is carried out and a checkpoint is saved, and `model` is the type of model to train (valid choices are: 'bgru_1-128', 'ugru_1-128', 'ugru_1-512', 'ugru_2-512', and 'ugru_2-1024').
+Where `$(modelname)` is the name of the model to train. Valid choices are:
+```
+ugru_1-128_1ch, ugru_1-128_2ch, ugru_1-256_1ch, ugru_1-256_2ch, ugru_1-512_1ch, ugru_1-512_2ch,
+ugru_2-128_1ch, ugru_2-128_2ch, ugru_2-256_1ch, ugru_2-256_2ch, ugru_2-512_1ch, ugru_2-512_2ch,
+ulstm_1-128_1ch, ulstm_1-128_2ch, ulstm_1-256_1ch, ulstm_1-256_2ch, ulstm_1-512_1ch, ulstm_1-512_2ch,
+ulstm_2-128_1ch, ulstm_2-128_2ch, ulstm_2-256_1ch, ulstm_2-256_2ch, ulstm_2-512_1ch, ulstm_2-512_2ch
+```
+
+You are welcome to modify the following variables in `script_traineval.sh`: `num_workers` is the number of threads to use while training and evaluating, `batch_size` is the isze of data points per batch, `num_epochs` is the total number of epochs to run (an epoch being running through all of the data points in `features_train.txt`), `num_epochs_eval` is the number of epochs to run after which an evaluation is carried out and a checkpoint is saved.
 
 To train a model from a given checkpoint, with an evaluation at every given number of epochs, run:
 ```
