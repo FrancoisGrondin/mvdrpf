@@ -282,7 +282,7 @@ def create_pairs(ys,tdoas,src_tosteer):
     for iMic1 in range(0, nMics):
       
       for iMic2 in range(iMic1+1, nMics):
-        tau = tdoas[src_tosteer,iMic1] - tdoas[src_tosteer,iMic2]
+        tau = tdoas[src_tosteer,iMic2] - tdoas[src_tosteer,iMic1]
         A = np.exp(-1j*2*np.pi*tau*k*f/frameSize)
         YY = A * Ys[iMic1] * np.conj(Ys[iMic2])
         YY2 = np.zeros((Ys[0].shape[0], Ys[0].shape[1], Ys[0].shape[2], 2), dtype=np.float32)
