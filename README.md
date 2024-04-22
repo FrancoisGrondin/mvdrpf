@@ -197,7 +197,14 @@ cd $(steernet_dir)
 ln -s python ./steernet
 ```
 
-Then, carry out the data creation process, using the included scripts, right up to the point using `script_features.sh`. To create the SteerNet-based features, instead use `script_features_steernet.sh`:
+Then, carry out the data creation process as established in the [SteerNet repository](https://github.com/FrancoisGrondin/steernet), using the included scripts in that repository. In summary:
+1. Create the room impulse responses as explained in the README file located in `steernet/octave/rir` directory.
+1. Download the librispeech corpus.
+1. Prepare data for training as explained in the README file located in `steernet/python` directory.
+
+You do not need to re-train the SteerNet; we will use the one located in `steernet/trained/blstm_epoch020.bin`.
+
+Once the SteerNet data creation process is done, to create the SteerNet-based features used to train the MVDRpf model use `script_features_steernet.sh`:
 ```
 bash script_features_steernet.sh $(base_dir) $(steernet_dir)
 ```

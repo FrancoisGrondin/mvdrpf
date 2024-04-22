@@ -47,7 +47,7 @@ echo "Creating validation features..."
 python3 features_steernet.py --steernet_basedir $steernetdir --speech_files $basedir/speech_valid.txt --index_start $valid_start --index_stop $valid_end --output $basedir/data/valid
 find $basedir/data/valid -name "*.wav" > $basedir/features/features_valid.txt
 
-echo "Creating training features..."
+echo "Creating testing features..."
 python3 features_steernet.py --steernet_basedir $steernetdir --speech_files $basedir/speech_test.txt --index_start $test_start --index_stop $test_end --output $basedir/data/test
 find $basedir/data/test -name "*.wav" > $basedir/features/features_test.txt
 
